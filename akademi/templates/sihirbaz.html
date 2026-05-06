@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sınav Sihirbazı | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-wrapper {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+    
+    .wizard-header {
+        background: linear-gradient(135deg, var(--primary-bg, #0a1f3a) 0%, #1a3a5f 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 4px solid var(--accent-color, #ff4d00);
+    }
+
+    .form-label {
+        font-weight: 700;
+        color: var(--primary-bg, #0a1f3a);
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+    }
+
+    .form-select, .form-control {
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        padding: 10px; /* Kutular biraz daraltıldı */
+        transition: all 0.2s;
+    }
+
+    .form-select:focus, .form-control:focus {
+        border-color: var(--accent-color, #ff4d00);
+        box-shadow: 0 0 0 0.25rem rgba(255, 77, 0, 0.15);
+    }
+
+    /* YENİ: Checkbox (Tik kutusu) Listesi Tasarımı */
+    .checkbox-list-container {
+        max-height: 220px;
+        overflow-y: auto; /* Çok modül olursa kaydırma çubuğu çıkar */
+        background-color: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    .custom-checkbox-wrapper {
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .custom-checkbox-wrapper:last-child {
+        border-bottom: none;
+    }
+    
+    .custom-checkbox-wrapper:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .custom-checkbox-wrapper label {
+        cursor: pointer;
+        width: 100%;
+        margin-left: 8px;
+        color: #334155;
+    }
+
+    .btn-submit {
+        background-color: var(--accent-color, #ff4d00);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        width: 100%;
+        cursor: pointer;
+    }
+
+    .btn-submit:hover {
+        background-color: #e64500;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 77, 0, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <!-- GÜNCELLEME: Form ana kutusu col-lg-10'dan col-lg-8'e düşürülerek daraltıldı -->
+        <div class="col-lg-8 col-md-10">
+
+            <div class="wizard-wrapper">
+                <div class="wizard-header">
+                    <h2 class="fw-bold mb-1"><i class="fas fa-magic text-warning me-2"></i> Sınav Hazırlama Sihirbazı</h2>
+                    <p class="mb-0 text-light opacity-75">Saniyeler içinde otomatik sınav kağıdınızı oluşturun.</p>
+                </div>
+                
+                <div class="p-3 p-md-4 bg-light">
+                    <form method="GET" action="{% url 'sihirbaz' %}" id="sihirbazForm">
+                        
+                        <!-- DERS FİLTRELERİ -->
+                        <div class="bg-white p-3 p-md-4 rounded-3 shadow-sm mb-4 border">
+                            <h5 class="fw-bold mb-3" style="color: var(--accent-color); border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">1. Ders Bilgileri</h5>
+                            
+                            <!-- GÜNCELLEME: Sınıf, Dal ve Ders aynı satıra (3'lü) yerleştirildi -->
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Sınıf (Zorunlu)</label>
+                                    <select id="sinif" name="sinif" required class="form-select border-primary shadow-sm">
+                                        <option value="">Seçiniz...</option>
+                                        {% for s in siniflar %}
+                                            <option value="{{ s.id }}">{{ s.sinif }}. Sınıf</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Dal (Opsiyonel)</label>
+                                    <select id="dal" name="dal" class="form-select bg-light shadow-sm">
+                                        <option value="">Tüm Dallar</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Ders (Opsiyonel)</label>
+                                    <select id="ders" name="ders" class="form-select bg-light shadow-sm">
+                                        <option value="">Tüm Dersler</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- YENİ: Checkbox (Tikli) Modül Seçim Alanı -->
+                                <div class="col-12 mt-4">
+                                    <label class="form-label text-primary"><i class="fas fa-check-square me-2"></i>Modül Seçimi (Birden fazla seçebilirsiniz)</label>
+                                    <div id="modul_container" class="checkbox-list-container shadow-sm">
+                                        <div class="text-muted small p-2 text-center mt-2">
+                                            <i class="fas fa-info-circle mb-2 fs-4 text-secondary"></i><br>
+                                            Modülleri listelemek ve seçmek için lütfen önce yukarıdan <strong>Ders</strong> seçimi yapınız.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- SINAV AYARLARI -->
+                        <div class="bg-white p-3 p-md-4 rounded-3 shadow-sm mb-4 border">
+                            <h5 class="fw-bold mb-3" style="color: var(--accent-color); border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">2. Sınav Ayarları</h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Soru Türü</label>
+                                    <select name="tur" class="form-select shadow-sm">
+                                        <option value="all">Karışık (Tümü)</option>
+                                        {% if soru_turleri %}
+                                            {% for t in soru_turleri %}
+                                                <option value="{{ t.id }}">{{ t.adi }}</option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Zorluk</label>
+                                    <select name="zorluk" class="form-select shadow-sm">
+                                        <option value="karisik">Rastgele Dağılım</option>
+                                        <option value="kolay">Kolay</option>
+                                        <option value="orta">Orta</option>
+                                        <option value="zor">Zor</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-danger">Kaç Soru Olsun?</label>
+                                    <input type="number" name="soru_sayisi" value="20" min="1" max="100" required class="form-control border-danger fw-bold shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-submit shadow-lg">
+                            <i class="fas fa-play-circle me-2"></i> SINAVI HAZIRLA VE LİSTELE
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        
+        var bosModulMesaji = `<div class="text-muted small p-2 text-center mt-2"><i class="fas fa-info-circle mb-2 fs-4 text-secondary"></i><br>Modülleri listelemek ve seçmek için lütfen önce <strong>Ders</strong> seçimi yapınız.</div>`;
+
+        // Sınıf seçildiğinde
+        $('#sinif').change(function() {
+            var sinif_id = $(this).val();
+            $('#dal').empty().append('<option value="">Yükleniyor...</option>');
+            $('#ders').empty().append('<option value="">Bekleniyor...</option>');
+            $('#modul_container').html(bosModulMesaji);
+            
+            if (sinif_id) {
+                $.getJSON(`/api/dallar/${sinif_id}/`, function(data) {
+                    $('#dal').removeClass('bg-light').empty().append('<option value="">Dal Seçiniz (Tümü İçin Boş Bırakın)</option>');
+                    $.each(data.dallar, function(i, dal) { 
+                        $('#dal').append(`<option value="${dal.id}">${dal.adi}</option>`); 
+                    });
+                });
+            } else {
+                $('#dal, #ders').empty().append('<option value="">Tümü</option>');
+            }
+        });
+        
+        // Dal seçildiğinde
+        $('#dal').change(function() {
+            var dal_id = $(this).val();
+            $('#ders').empty().append('<option value="">Yükleniyor...</option>');
+            $('#modul_container').html(bosModulMesaji);
+            
+            if (dal_id) {
+                $.getJSON(`/api/dersler/${dal_id}/`, function(data) {
+                    $('#ders').removeClass('bg-light').empty().append('<option value="">Ders Seçiniz (Tümü İçin Boş Bırakın)</option>');
+                    $.each(data.dersler, function(i, ders) { 
+                        $('#ders').append(`<option value="${ders.id}">${ders.adi}</option>`); 
+                    });
+                });
+            } else {
+                $('#ders').empty().append('<option value="">Tümü</option>');
+            }
+        });
+
+        // Ders seçildiğinde modülleri TİK (Checkbox) kutusu olarak getir
+        $('#ders').change(function() {
+            var ders_id = $(this).val();
+            var container = $('#modul_container');
+            
+            container.html('<div class="text-center p-3 text-primary"><i class="fas fa-spinner fa-spin fa-2x"></i><br><small>Modüller Yükleniyor...</small></div>');
+            
+            if (ders_id) {
+                $.getJSON(`/api/moduller/${ders_id}/`, function(data) {
+                    container.empty();
+                    
+                    if (data.moduller.length === 0) {
+                        container.html('<div class="alert alert-warning m-2 py-2 small text-center">Bu derse ait modül bulunmamaktadır.</div>');
+                    } else {
+                        // Gelen her modül için Checkbox oluştur
+                        $.each(data.moduller, function(i, modul) { 
+                            var checkboxHTML = `
+                                <div class="custom-checkbox-wrapper d-flex align-items-center">
+                                    <input class="form-check-input mt-0 shadow-sm" type="checkbox" name="modul" value="${modul.id}" id="modul_${modul.id}" style="width: 1.2rem; height: 1.2rem;">
+                                    <label class="form-check-label fw-bold" for="modul_${modul.id}">
+                                        ${modul.adi}
+                                    </label>
+                                </div>
+                            `;
+                            container.append(checkboxHTML); 
+                        });
+                    }
+                });
+            } else {
+                container.html(bosModulMesaji);
+            }
+        });
+        
+    });
+</script>
+{% endblock %}

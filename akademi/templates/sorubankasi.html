@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Soru Bankası | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* GENEL YERLEŞİM VE KART TASARIMI */
+    .question-card {
+        border: 1px solid #eef2f7;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        background: #fff;
+        transition: all 0.3s ease;
+        border-top: 4px solid #0d6efd; 
+        display: flex;
+        flex-direction: column;
+    }
+    .question-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    /* ÜST BİLGİ ALANI */
+    .question-info-bar {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.75rem;
+        color: #6c757d;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .info-tag {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    .question-body {
+        padding: 20px 25px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* SORU METNİ VE ŞIKLAR */
+    .question-text {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #1f2937;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    .options-list {
+        list-style-type: none;
+        padding-left: 0;
+        margin-bottom: 20px;
+    }
+    .options-list li {
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        color: #374151;
+        line-height: 1.5;
+    }
+
+    /* FİLTRELEME VE ARAMA ALANI */
+    .filter-section {
+        background: linear-gradient(135deg, #0a1f3a 0%, #1a365d 100%);
+        border-radius: 15px;
+        color: white;
+    }
+    .search-input {
+        border-radius: 8px; 
+        border: 2px solid transparent;
+        height: 38px;
+    }
+    .search-input:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+        outline: none;
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4 px-xl-5">
+    
+    <!-- Başlık Alanı -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <h2 class="fw-bold mb-0" style="color: #0a1f3a;">
+            <i class="fas fa-database text-warning me-2"></i> Soru Bankası
+        </h2>
+        <a href="{% url 'manuel_sinav_kagit' %}" class="btn btn-success fw-bold shadow-sm rounded-pill px-4">
+            Seçili Sorularla Sınav Kağıdı Oluştur
+        </a>
+    </div>
+
+    <!-- FİLTRELEME VE ARAMA PANELİ -->
+    <div class="filter-section shadow-lg mb-5 p-4">
+        <h5 class="fw-bold text-white mb-3"><i class="fas fa-search text-warning me-2"></i> Hızlı Arama & Filtreleme</h5>
+        <div class="row g-3">
+            <div class="col-12 mb-2">
+                <input type="text" id="search_ders" class="form-control search-input shadow-sm" placeholder="🔍 Ders adına göre hızlı ara...">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select shadow-sm" id="filter_sinif">
+                    <option value="">Tüm Sınıflar</option>
+                    {% for sinif in siniflar %}
+                    <option value="{{ sinif.sinif }}" data-id="{{ sinif.id }}">{{ sinif.sinif }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select shadow-sm" id="filter_dal" disabled><option value="">Dal Seçin</option></select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select shadow-sm" id="filter_ders" disabled><option value="">Ders Seçin</option></select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select shadow-sm" id="filter_modul" disabled><option value="">Modül Seçin</option></select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select shadow-sm" id="filter_tur">
+                    <option value="">Tür</option>
+                    {% for tur in soru_turleri %}<option value="{{ tur.adi }}">{{ tur.adi }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- SORU GRİDİ -->
+    <div class="row g-4" id="soruGridContainer">
+        {% if sorular %}
+            {% for soru in sorular %}
+            <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch question-item"
+                 data-sinif="{{ soru.sinif.sinif }}" data-dal="{{ soru.dal.adi }}" 
+                 data-ders="{{ soru.ders.adi }}" data-modul="{{ soru.modul.adi }}" 
+                 data-tur="{{ soru.tur.adi }}">
+                
+                <div class="question-card w-100">
+                    <div class="question-info-bar">
+                        <span class="info-tag"><strong>{{ soru.sinif.sinif }}</strong></span>
+                        <span class="info-tag">{{ soru.dal.adi }}</span>
+                        <span class="info-tag text-primary fw-bold">{{ soru.ders.adi }}</span>
+                        <span class="info-tag">{{ soru.modul.adi }}</span>
+                        <span class="ms-auto text-dark"><strong>{{ soru.get_zorluk_seviyesi_display }}</strong></span>
+                    </div>
+
+                    <div class="question-body">
+                        <div class="question-text">
+                            {{ forloop.counter }}. {{ soru.soru_metni|linebreaksbr }}
+                        </div>
+
+                        {% if soru.soru_resmi %}
+                        <div class="mb-3 text-center">
+                            <img src="{{ soru.soru_resmi.url }}" class="img-fluid rounded border shadow-sm" style="max-height: 180px;">
+                        </div>
+                        {% endif %}
+
+                        <!-- GÜNCELLEME 1: Sadece dolu olan şıklar ekrana basılır -->
+                        <ul class="options-list">
+                            {% if soru.secenek_a %}<li><strong>A)</strong> {{ soru.secenek_a }}</li>{% endif %}
+                            {% if soru.secenek_b %}<li><strong>B)</strong> {{ soru.secenek_b }}</li>{% endif %}
+                            {% if soru.secenek_c %}<li><strong>C)</strong> {{ soru.secenek_c }}</li>{% endif %}
+                            {% if soru.secenek_d %}<li><strong>D)</strong> {{ soru.secenek_d }}</li>{% endif %}
+                            {% if soru.secenek_e %}<li><strong>E)</strong> {{ soru.secenek_e }}</li>{% endif %}
+                        </ul>
+
+                        <!-- GÜNCELLEME 2: Gelişmiş Cevap Kutusu (Resim ve Klasik Metin Destekli) -->
+                        <div class="alert alert-success d-none py-2 mb-3 shadow-sm" id="cevap-kutusu-{{ soru.id }}">
+                            <div class="fw-bold text-success mb-1">
+                                {% if soru.dogru_cevap %}
+                                    Doğru Cevap: {{ soru.dogru_cevap }}
+                                {% else %}
+                                    <i class="fas fa-pen-nib me-1"></i> Referans Cevap:
+                                {% endif %}
+                            </div>
+                            
+                            {% if soru.klasik_cevap %}
+                                <div class="text-dark small mb-2" style="white-space: pre-wrap;">{{ soru.klasik_cevap }}</div>
+                            {% endif %}
+                            
+                            {% if soru.cevap_resmi %}
+                                <div class="text-center mt-2 pt-2 border-top border-success border-opacity-25">
+                                    <img src="{{ soru.cevap_resmi.url }}" class="img-fluid rounded shadow-sm" style="max-height: 150px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- GÜNCELLEME 3: Düzenle Butonu Eklendi -->
+                        <div class="d-flex gap-2 mt-auto pt-3 border-top align-items-center flex-wrap">
+                            <button type="button" class="btn btn-primary btn-sm btn-cevabi-goster" data-id="{{ soru.id }}">Cevabı Göster</button>
+                            
+                            {% if soru.id|stringformat:"s" in exam_questions %}
+                                <button type="button" class="btn btn-success btn-sm btn-sinava-ekle" data-id="{{ soru.id }}">Eklendi</button>
+                            {% else %}
+                                <button type="button" class="btn btn-outline-success btn-sm btn-sinava-ekle" data-id="{{ soru.id }}">Sınava Ekle</button>
+                            {% endif %}
+
+                            <!-- Sadece Yönetici İse Düzenle Butonunu Görsün -->
+                            {% if request.user.is_staff %}
+                            <a href="/soru-duzenle/{{ soru.id }}/" class="btn btn-outline-secondary btn-sm" title="Soruyu Düzenle">
+                                <i class="fas fa-edit"></i> Düzenle
+                            </a>
+                            {% endif %}
+
+                            <button type="button" class="btn btn-link btn-sm text-warning ms-auto p-0 btn-hata-bildir" data-id="{{ soru.id }}" style="text-decoration:none;">Hata Bildir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- MODALLAR -->
+    <div class="modal fade" id="hataModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-primary">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">Soru Hatası Bildir</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="hataForm">
+                        <input type="hidden" id="hata_soru_id">
+                        <textarea class="form-control" id="hata_mesaj" rows="4" placeholder="Hata açıklamasını yazınız..."></textarea>
+                        <div id="hata_alert" class="alert d-none mt-2"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" id="btn-hata-gonder" class="btn btn-primary">Gönder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YÜZEN SEPET -->
+    <div id="floating-cart" class="shadow-lg rounded-4 p-3 d-flex align-items-center gap-3 {% if not exam_questions %}d-none{% endif %}" style="position: fixed; bottom: 30px; right: 30px; background-color: #0a1f3a; color: white; z-index: 1050; border: 2px solid #ffc107;">
+        <i class="fas fa-shopping-cart fa-2x text-warning"></i>
+        <span id="cart-count" class="badge rounded-pill bg-danger" style="font-size: 1rem;">{{ exam_questions|length }}</span>
+        <div class="d-flex flex-column gap-1">
+            <a href="{% url 'manuel_sinav_kagit' %}" class="btn btn-warning btn-sm fw-bold rounded-pill">Sınavı Gör</a>
+            <a href="/sinavi-temizle/" class="btn btn-danger btn-sm fw-bold rounded-pill">Temizle</a>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    console.log("Matbaa Akademi: Javascript dosyası başarıyla yüklendi.");
+    const csrftoken = '{{ csrf_token }}';
+
+    // --- 1. ARAMA VE FİLTRELEME ---
+    function applyFilters() {
+        const s_sinif = $('#filter_sinif').val() ? $('#filter_sinif').val().trim() : "";
+        const s_dal = $('#filter_dal').val() ? $('#filter_dal').val().trim() : "";
+        const s_ders = $('#filter_ders').val() ? $('#filter_ders').val().trim() : "";
+        const s_modul = $('#filter_modul').val() ? $('#filter_modul').val().trim() : "";
+        const s_tur = $('#filter_tur').val() ? $('#filter_tur').val().trim() : "";
+        const s_search = $('#search_ders').val() ? $('#search_ders').val().toLowerCase().trim() : "";
+
+        $('.question-item').each(function() {
+            const el = $(this);
+            let match = true;
+            
+            const q_sinif = el.attr('data-sinif') ? el.attr('data-sinif').trim() : "";
+            const q_dal = el.attr('data-dal') ? el.attr('data-dal').trim() : "";
+            const q_ders = el.attr('data-ders') ? el.attr('data-ders').trim() : "";
+            const q_modul = el.attr('data-modul') ? el.attr('data-modul').trim() : "";
+            const q_tur = el.attr('data-tur') ? el.attr('data-tur').trim() : "";
+            
+            if(s_search && q_ders.toLowerCase().indexOf(s_search) === -1) match = false;
+            if(s_sinif && q_sinif !== s_sinif) match = false;
+            if(s_dal && q_dal !== s_dal) match = false;
+            if(s_ders && q_ders !== s_ders) match = false;
+            if(s_modul && q_modul !== s_modul) match = false;
+            if(s_tur && q_tur !== s_tur) match = false;
+            
+            if (match) { el.removeClass('d-none').addClass('d-flex'); } 
+            else { el.removeClass('d-flex').addClass('d-none'); }
+        });
+    }
+    
+    $('#search_ders').on('keyup', applyFilters);
+    $('#filter_sinif, #filter_dal, #filter_ders, #filter_modul, #filter_tur').on('change', applyFilters);
+
+    // --- 2. DİNAMİK DROPDOWNLAR ---
+    $('#filter_sinif').change(function() {
+        const id = $(this).find(':selected').data('id');
+        $('#filter_dal').html('<option value="">Dal Seçin</option>').prop('disabled', !id);
+        $('#filter_ders').html('<option value="">Ders Seçin</option>').prop('disabled', true);
+        $('#filter_modul').html('<option value="">Modül Seçin</option>').prop('disabled', true);
+        
+        if(id) {
+            $.get('/api/dallar/' + id + '/', function(d) {
+                d.dallar.forEach(x => $('#filter_dal').append(`<option value="${x.adi}" data-id="${x.id}">${x.adi}</option>`));
+            });
+        }
+    });
+
+    $('#filter_dal').change(function() {
+        const id = $(this).find(':selected').data('id');
+        $('#filter_ders').html('<option value="">Ders Seçin</option>').prop('disabled', !id);
+        $('#filter_modul').html('<option value="">Modül Seçin</option>').prop('disabled', true);
+        
+        if(id) {
+            $.get('/api/dersler/' + id + '/', function(d) {
+                d.dersler.forEach(x => $('#filter_ders').append(`<option value="${x.adi}" data-id="${x.id}">${x.adi}</option>`));
+            });
+        }
+    });
+
+    $('#filter_ders').change(function() {
+        const id = $(this).find(':selected').data('id');
+        $('#filter_modul').html('<option value="">Modül Seçin</option>').prop('disabled', !id);
+        
+        if(id) {
+            $.get('/api/moduller/' + id + '/', function(d) {
+                d.moduller.forEach(x => $('#filter_modul').append(`<option value="${x.adi}" data-id="${x.id}">${x.adi}</option>`));
+            });
+        }
+    });
+
+    // --- 3. BUTON İŞLEMLERİ ---
+    $(document).on('click', '.btn-cevabi-goster', function() {
+        const id = $(this).data('id'), box = $('#cevap-kutusu-'+id);
+        box.toggleClass('d-none');
+        $(this).text(box.hasClass('d-none') ? 'Cevabı Göster' : 'Cevabı Gizle');
+    });
+
+    $(document).on('click', '.btn-sinava-ekle', function() {
+        const btn = $(this), id = btn.data('id');
+        $.ajax({
+            url: '/api/toggle-exam-question/',
+            type: 'POST',
+            data: { 'soru_id': id, 'csrfmiddlewaretoken': csrftoken },
+            success: function(r) {
+                if(r.success) {
+                    btn.toggleClass('btn-outline-success btn-success').text(r.added ? 'Eklendi' : 'Sınava Ekle');
+                    $('#cart-count').text(r.count);
+                    r.count > 0 ? $('#floating-cart').removeClass('d-none').fadeIn() : $('#floating-cart').fadeOut();
+                }
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-hata-bildir', function() {
+        $('#hata_soru_id').val($(this).data('id'));
+        $('#hata_alert').addClass('d-none');
+        $('#hata_mesaj').val('');
+        $('#hataModal').modal('show');
+    });
+
+    $('#btn-hata-gonder').on('click', function() {
+        const id = $('#hata_soru_id').val(), msg = $('#hata_mesaj').val();
+        if(!msg.trim()) return alert('Lütfen mesaj yazın.');
+        $.ajax({
+            url: '{% url "hata_bildir" %}',
+            type: 'POST',
+            data: { 'soru_id': id, 'mesaj': msg, 'csrfmiddlewaretoken': csrftoken },
+            success: function(r) {
+                if(r.success) {
+                    $('#hata_alert').removeClass('d-none alert-danger').addClass('alert-success').text('Gönderildi.');
+                    setTimeout(() => $('#hataModal').modal('hide'), 1500);
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock extra_js %}

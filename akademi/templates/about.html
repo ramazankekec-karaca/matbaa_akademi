@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hakkında | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hakkında Sayfası Karşılama (Hero) Bölümü */
+    .about-hero {
+        background: linear-gradient(135deg, var(--primary-bg) 0%, #1a365d 100%);
+        color: white;
+        padding: 4rem 0;
+        border-bottom: 5px solid var(--accent-color);
+        margin-bottom: 3rem;
+    }
+    
+    /* Misyon & Vizyon Kartları */
+    .mission-card {
+        border: none;
+        border-left: 4px solid var(--accent-color);
+        background-color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        height: 100%;
+        border-radius: 10px;
+    }
+    
+    .mission-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .icon-circle {
+        width: 65px;
+        height: 65px;
+        background-color: rgba(255, 77, 0, 0.1); /* Saydam turuncu */
+        color: var(--accent-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 1.2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Üst Karşılama (Hero) Bölümü -->
+<div class="about-hero text-center shadow">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-3"><i class="fas fa-info-circle me-3"></i>Hakkımızda</h1>
+        <p class="lead" style="max-width: 750px; margin: 0 auto; color: #cbd5e1;">
+            Matbaa Akademi, mesleki eğitimde dijitalleşmeyi hedefleyen, matbaacılık alanı öğretmenleri ve öğrencileri için özel olarak geliştirilmiş yenilikçi bir platformdur.
+        </p>
+    </div>
+</div>
+
+<!-- Ana İçerik Bölümü -->
+<div class="container mb-5">
+    
+    <!-- Biz Kimiz? ve Özellikler -->
+    <div class="row mb-5 align-items-center g-4">
+        
+        <!-- Sol Taraf: Biz Kimiz Yazısı -->
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-4" style="color: var(--primary-bg);">Biz Kimiz?</h2>
+            <p class="text-muted" style="line-height: 1.8; font-size: 1.05rem;">
+                Matbaa Akademi, baskı öncesi, dijital baskı ve baskı sonrası gibi matbaacılık alanlarında eğitim veren kurumlar için tasarlanmış kapsamlı bir soru bankası sistemidir. Amacımız, öğretmenlerin soru hazırlama, sınav kağıdı oluşturma ve test süreçlerini en aza indirerek eğitime daha fazla zaman ayırmalarını sağlamaktır.
+            </p>
+            <p class="text-muted" style="line-height: 1.8; font-size: 1.05rem;">
+                Kullanıcı dostu arayüzü sayesinde, binlerce soru arasından dilediğinizi bulabilir, kendi sorularınızı ekleyebilir ve tek tıkla profesyonel sınav kağıtları oluşturabilirsiniz.
+            </p>
+        </div>
+        
+        <!-- Sağ Taraf: Özellikler Listesi -->
+        <div class="col-md-6">
+            <div class="bg-white p-4 rounded-3 shadow-sm border border-light">
+                <h4 class="fw-bold mb-4" style="color: var(--primary-bg);">
+                    <i class="fas fa-star text-warning me-2"></i> Temel Özelliklerimiz
+                </h4>
+                <ul class="list-unstyled mb-0" style="line-height: 2.2;">
+                    <li><i class="fas fa-check-circle text-success me-3 fs-5 align-middle"></i> <strong class="text-dark">Gelişmiş Filtreleme:</strong> Sınıf, Dal, Ders ve Modül bazlı detaylı arama.</li>
+                    <li><i class="fas fa-check-circle text-success me-3 fs-5 align-middle"></i> <strong class="text-dark">Sınav Sihirbazı (Sepet):</strong> Seçili sorulardan anında baskıya hazır sınav kağıdı.</li>
+                    <li><i class="fas fa-check-circle text-success me-3 fs-5 align-middle"></i> <strong class="text-dark">Word'e Aktarım:</strong> Ekrandaki soruları saniyeler içinde .docx formatında indirme.</li>
+                    <li><i class="fas fa-check-circle text-success me-3 fs-5 align-middle"></i> <strong class="text-dark">Toplu Soru Ekleme:</strong> Gelişmiş admin paneli ile soruları sisteme hızlıca yükleme.</li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Misyon ve Vizyon Kartları -->
+    <div class="row g-4 mt-2 mb-4">
+        
+        <!-- Misyon Kartı -->
+        <div class="col-md-6">
+            <div class="card mission-card p-4">
+                <div class="card-body">
+                    <div class="icon-circle">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3" style="color: var(--primary-bg);">Misyonumuz</h4>
+                    <p class="text-muted mb-0" style="line-height: 1.7;">
+                        Matbaacılık eğitimindeki içerik eksikliğini gidermek, eğitmenlerin omuzlarındaki yükü hafifletmek ve öğrencilere her seviyeye uygun, nitelikli ve güncel sorular sunarak mesleki eğitimi bir adım ileri taşımak.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vizyon Kartı -->
+        <div class="col-md-6">
+            <div class="card mission-card p-4" style="border-left-color: #02172d;">
+                <div class="card-body">
+                    <!-- Bu ikonun renklerini laciverte uyarladık -->
+                    <div class="icon-circle" style="background-color: rgba(2, 23, 45, 0.1); color: #02172d;">
+                        <i class="fas fa-binoculars"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3" style="color: var(--primary-bg);">Vizyonumuz</h4>
+                    <p class="text-muted mb-0" style="line-height: 1.7;">
+                        Türkiye'nin en zengin, en güvenilir ve teknolojik olarak en gelişmiş "Matbaacılık Mesleki Eğitim" soru kütüphanesi olmak ve tüm mesleki eğitim kurumlarının başvuru kaynağı haline gelmek.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+</div>
+{% endblock %}

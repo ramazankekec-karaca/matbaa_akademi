@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Üye Ol | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Sayfa Arka Planı ve Ortalama */
+    .auth-container {
+        min-height: calc(100vh - 250px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 0;
+    }
+    
+    /* Kayıt Kartı Tasarımı */
+    .auth-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: none;
+    }
+    
+    /* Kartın Üst Lacivert Başlık Kısmı */
+    .auth-header {
+        background: linear-gradient(135deg, var(--primary-bg) 0%, #173a65 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 4px solid var(--accent-color);
+    }
+    
+    .auth-body {
+        padding: 2.5rem;
+    }
+    
+    /* 
+       DİKKAT: Django'nun otomatik oluşturduğu form alanlarını (input) 
+       Bootstrap stiline benzetmek için yazdığımız CSS kuralları 
+    */
+    .auth-body input[type="text"],
+    .auth-body input[type="password"],
+    .auth-body input[type="email"] {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        color: #212529;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        margin-bottom: 0.5rem;
+    }
+    
+    .auth-body input:focus {
+        background-color: #fff;
+        border-color: var(--accent-color);
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(255, 77, 0, 0.25);
+    }
+    
+    .auth-body label {
+        font-weight: 600;
+        color: var(--primary-bg);
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+    
+    .auth-body .helptext {
+        font-size: 0.8rem;
+        color: #6c757d;
+        display: block;
+        margin-bottom: 1.2rem;
+    }
+    
+    .auth-body ul.errorlist {
+        color: #dc3545;
+        list-style-type: none;
+        padding: 0;
+        font-size: 0.85rem;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5">
+                <div class="auth-card">
+                    
+                    <!-- Başlık -->
+                    <div class="auth-header">
+                        <h2 class="fw-bold mb-0"><i class="fas fa-user-plus me-2"></i>Kayıt Ol</h2>
+                        <p class="mb-0 mt-2 text-light" style="font-size: 0.95rem;">Matbaa Akademi'ye hemen katılın!</p>
+                    </div>
+                    
+                    <!-- Form İçeriği -->
+                    <div class="auth-body">
+                        <form method="POST" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Genel form hataları varsa en üstte göster -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger p-2 mb-4 text-center" style="font-size: 0.9rem;">
+                                    {{ form.non_field_errors }}
+                                </div>
+                            {% endif %}
+
+                            <!-- Django formunu yazdırıyoruz. 
+                                 Üstte yazdığımız CSS sayesinde çok şık görünecek -->
+                            <div class="form-group mb-4">
+                                {{ form.as_p }}
+                            </div>
+                            
+                            <!-- Kayıt Ol Butonu -->
+                            <button type="submit" class="btn w-100 fw-bold py-3 shadow-sm rounded-pill" style="background-color: var(--accent-color); color: white; font-size: 1.1rem; border: none;">
+                                Üye Ol <i class="fas fa-check-circle ms-2"></i>
+                            </button>
+                        </form>
+                        
+                        <!-- Zaten Hesabı Olanlar İçin Yönlendirme -->
+                        <div class="text-center mt-4">
+                            <p class="text-muted mb-0">Zaten bir hesabınız var mı? 
+                                <a href="{% url 'login' %}" class="fw-bold ms-1" style="color: var(--primary-bg); text-decoration: none;">
+                                    <i class="fas fa-sign-in-alt"></i> Giriş Yap
+                                </a>
+                            </p>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

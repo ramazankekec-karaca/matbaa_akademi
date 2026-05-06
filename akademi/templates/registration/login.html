@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Üye Girişi | Matbaa Akademi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    h1.gradient-text {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col min-h-screen">
+  
+  <!-- Üst Menü (Navbar) -->
+  <header class="bg-gray-800 p-4 shadow-md">
+    <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+      <h1 class="text-3xl md:text-4xl font-bold text-center gradient-text mb-4 md:mb-0">Matbaa Akademi</h1>
+      <nav class="flex flex-wrap justify-center gap-2 md:space-x-4">
+        <a class="btn bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition" href="{% url 'home' %}">Anasayfa</a>
+        <a class="btn bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition" href="{% url 'sihirbaz' %}">Sınav Sihirbazı</a>
+        <a class="btn bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition" href="{% url 'register' %}">Üye Ol</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Giriş Formu Alanı -->
+  <main class="flex-grow flex items-center justify-center p-6">
+    <div class="bg-gray-800 p-8 rounded-lg shadow-2xl border border-gray-700 w-full max-w-md">
+        
+        <div class="text-center mb-8">
+            <div class="inline-block bg-indigo-500 bg-opacity-20 p-4 rounded-full mb-3">
+                <i class="fas fa-user-circle text-4xl text-indigo-400"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white">Hesabınıza Giriş Yapın</h2>
+            <p class="text-gray-400 text-sm mt-1">Soru bankasına erişmek için oturum açın</p>
+        </div>
+
+        <!-- Hata Mesajı -->
+        {% if form.errors %}
+          <div class="bg-red-500 bg-opacity-20 border border-red-500 text-red-200 p-3 rounded mb-6 text-sm text-center flex items-center justify-center gap-2">
+            <i class="fas fa-exclamation-circle"></i>
+            Kullanıcı adı veya şifre hatalı!
+          </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-300 mb-1" for="username">Kullanıcı Adı</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-500"></i>
+                    </div>
+                    <input type="text" name="username" id="username" class="w-full bg-gray-900 border border-gray-600 text-white rounded pl-10 pr-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" placeholder="Kullanıcı adınızı girin" required autofocus>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-1" for="password">Şifre</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-500"></i>
+                    </div>
+                    <input type="password" name="password" id="password" class="w-full bg-gray-900 border border-gray-600 text-white rounded pl-10 pr-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" placeholder="••••••••" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded transition duration-200 shadow-lg flex justify-center items-center gap-2">
+                Giriş Yap <i class="fas fa-sign-in-alt"></i>
+            </button>
+        </form>
+
+        <div class="mt-8 text-center text-gray-400 text-sm border-t border-gray-700 pt-6">
+            Hesabınız yok mu? 
+            <a href="{% url 'register' %}" class="text-indigo-400 hover:text-indigo-300 font-semibold transition">Hemen Üye Olun</a>
+        </div>
+    </div>
+  </main>
+
+  <!-- Alt Bilgi (Footer) -->
+  <footer class="bg-gray-800 text-gray-400 text-center p-4 shadow-inner mt-auto">
+    <p>&copy; 2024 Matbaa Akademi Soru Bankası. Tüm hakları saklıdır.</p>
+  </footer>
+
+</body>
+</html>

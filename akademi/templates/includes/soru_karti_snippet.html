@@ -1,0 +1,72 @@
+<div class="soru-card h-100 shadow-sm border rounded-3 bg-white mb-4" id="soru-{{ soru.id }}">
+    
+    <!-- Üst Bilgi Paneli -->
+    <div class="card-header bg-white border-bottom py-3 px-4">
+        <div class="row g-2 align-items-center" style="font-size: 0.85rem; color: #555;">
+            <div class="col-auto"><strong>Sınıf:</strong> {{ soru.sinif.sinif }}</div>
+            <div class="col-auto">| <strong>Dal:</strong> <span class="text-primary">{{ soru.dal.adi }}</span></div>
+            <div class="col-auto">| <strong>Ders:</strong> <span class="text-primary">{{ soru.ders.adi }}</span></div>
+            <div class="col-auto">| <strong>Konu:</strong> <span class="text-primary">{{ soru.modul.adi }}</span></div>
+            <div class="col-auto">| <strong>Tür:</strong> {{ soru.tur.adi }}</div>
+            <div class="col-auto">| <strong>Zorluk:</strong> {{ soru.get_zorluk_seviyesi_display }}</div>
+            <div class="col-auto">| <strong>Hazırlayan:</strong> <span class="text-primary">{{ soru.soruyu_hazirlayan.username }}</span></div>
+        </div>
+    </div>
+
+    <!-- Soru ve Şıklar -->
+    <div class="card-body px-4">
+        <h5 class="text-dark fw-bold mb-3">Soru</h5>
+        <p class="text-dark" style="line-height: 1.6;">
+            {{ soru.soru_metni|linebreaksbr }}
+        </p>
+        
+        {% if soru.soru_resmi %}
+            <img src="{{ soru.soru_resmi.url }}" alt="Soru Resmi" class="img-fluid border rounded mt-2 mb-3" style="max-height: 200px;">
+        {% endif %}
+
+        <h6 class="text-secondary fw-bold border-bottom pb-2 mt-4 mb-3">Cevaplar</h6>
+        <ul class="list-unstyled" style="line-height: 1.8;">
+            <li class="mb-2">A) {{ soru.secenek_a }}</li>
+            <li class="mb-2">B) {{ soru.secenek_b }}</li>
+            <li class="mb-2">C) {{ soru.secenek_c }}</li>
+            <li class="mb-2">D) {{ soru.secenek_d }}</li>
+            {% if soru.secenek_e %}
+                <li class="mb-2">E) {{ soru.secenek_e }}</li>
+            {% endif %}
+        </ul>
+        
+        <!-- Doğru Cevap Kutusu -->
+        <div class="alert alert-primary text-center fw-bold d-none mt-3" id="cevap-{{ soru.id }}">
+            Doğru Cevap: {{ soru.dogru_cevap }}
+        </div>
+    </div>
+
+    <!-- Alt Butonlar (Eşit Dağıtılmış Yatay Tasarım) -->
+    <div class="card-footer bg-white border-top-0 px-3 pb-3">
+        <!-- d-flex ve gap-2 ile aralık veriyoruz, w-100 ile tam genişliğe yayıyoruz -->
+        <div class="d-flex gap-2 w-100">
+            
+            <!-- 1. Doğru Cevabı Göster Butonu -->
+            <button class="btn btn-primary flex-fill btn-cevap-goster" data-target="#cevap-{{ soru.id }}" style="font-size: 0.8rem; padding: 0.5rem 0.2rem; white-space: nowrap;">
+                Cevabı Göster
+            </button>
+            
+            <!-- 2. Dinamik Sınava Ekle / Çıkar Butonu (Seçiliyse Tam Kırmızı) -->
+            {% if soru.id in exam_questions %}
+                <button class="btn btn-danger flex-fill add-to-exam" data-id="{{ soru.id }}" style="font-size: 0.8rem; padding: 0.5rem 0.2rem; white-space: nowrap;">
+                    <i class="fas fa-minus"></i> Sınavdan Çıkar
+                </button>
+            {% else %}
+                <button class="btn btn-outline-success flex-fill add-to-exam" data-id="{{ soru.id }}" style="font-size: 0.8rem; padding: 0.5rem 0.2rem; white-space: nowrap;">
+                    <i class="fas fa-plus"></i> Sınava Ekle
+                </button>
+            {% endif %}
+
+            <!-- 3. Hata Bildir Butonu -->
+            <button type="button" class="btn btn-outline-warning btn-hata-bildir" data-id="{{ soru.id }}">
+    <i class="fas fa-flag"></i> Hata Bildir
+</button>
+
+        </div>
+    </div>
+</div>

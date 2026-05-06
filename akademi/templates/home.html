@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ana Sayfa | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero (Karşılama) Bölümü */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-bg) 0%, #173a65 100%);
+        color: white;
+        padding: 3rem 0;
+        border-bottom: 5px solid var(--accent-color);
+        margin-bottom: 0;
+    }
+
+    .hero-title {
+        font-size: 2.1rem;
+        font-weight: 700;
+    }
+    
+    /* GÜNCELLEME: Yeni Kart Tasarımı İçin İstatistik Paneli */
+    .stats-bar {
+        background-color: #f4f7fb; /* Daha yumuşak bir arka plan */
+        padding: 4rem 0;
+        margin-bottom: 3rem;
+    }
+    
+    .stat-item {
+        background: white;
+        border-radius: 12px;
+        padding: 1.8rem 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* Sola dayalı */
+        text-align: left; /* Sola dayalı */
+        border-top: 5px solid var(--card-color, #173a65); /* Görseldeki gibi renkli üst çizgi */
+    }
+
+    .stat-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+    }
+
+    /* GÜNCELLEME: İkon Kutusu Tasarımı (Renkli Kutu İçinde Beyaz İkon) */
+    .icon-box {
+        width: 55px;
+        height: 55px;
+        border-radius: 12px;
+        background-color: var(--card-color, #173a65);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.2rem;
+    }
+
+    .stat-icon {
+        font-size: 1.8rem;
+        color: white; /* İkonlar artık beyaz */
+    }
+    
+    /* Görseldeki MEB_MAT_001 benzeri gri etiket */
+    .course-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: #94a3b8;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        background-color: #f1f5f9;
+        padding: 3px 8px;
+        border-radius: 4px;
+    }
+
+    .stat-label {
+        font-size: 1.15rem; 
+        font-weight: 700; 
+        color: #1e293b; 
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+    
+    .stat-desc {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+
+    /* Görseldeki alt link ("İncele ->") */
+    .action-link {
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-decoration: none;
+        color: var(--card-color, #173a65);
+        margin-top: auto; /* Kartın en altına iter */
+        display: inline-flex;
+        align-items: center;
+        transition: opacity 0.2s;
+    }
+    
+    .action-link:hover {
+        opacity: 0.7;
+    }
+
+    /* Alt Özellik Kartları */
+    .feature-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        height: 100%;
+        background-color: white;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    
+    .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1.5rem auto;
+        background-color: rgba(255, 77, 0, 0.1);
+        color: var(--accent-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Karşılama (Hero) Bölümü -->
+<div class="hero-section text-center shadow">
+    <div class="container">
+        <h1 class="hero-title mb-3"><i class="fas fa-graduation-cap me-3"></i>Matbaa Akademi'ye Hoş Geldiniz</h1>
+        <p class="lead mb-4" style="max-width: 800px; margin: 0 auto; color: #d1d5db; font-size: 1rem;">
+            Matbaacılık eğitiminde dijitalleşen soru bankası. Binlerce soruya ulaşın, saniyeler içinde sınav hazırlayın.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{% url 'soru_bankasi' %}" class="btn btn-light px-4 shadow-sm text-dark fw-bold rounded-pill">
+                <i class="fas fa-search me-2"></i> Soruları İncele
+            </a>
+            <a href="{% url 'sihirbaz' %}" class="btn px-4 shadow-sm fw-bold rounded-pill" style="background-color: var(--accent-color); color: white; border: none;">
+                <i class="fas fa-magic me-2"></i> Sınav Oluştur
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- İSTATİSTİKLER: Görseldeki Tasarıma Uygun Kartlar -->
+<div class="stats-bar shadow-sm">
+    <div class="container">
+        <!-- row-cols sınıflarıyla mobilde 1, tablette 2, pc'de 4 kart yan yana -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 justify-content-center">
+            {% if ders_istatistikleri %}
+                {% for ders in ders_istatistikleri %}
+                <div class="col">
+                    <!-- 
+                      GÜNCELLEME: Django 'cycle' kullanarak her karta sırayla farklı bir renk (Mavi, Pembe, Sarı, Lacivert vb.) atıyoruz. 
+                      Bu renk hem üst çizgiyi hem ikon kutusunu hem de 'İncele' yazısını boyar.
+                    -->
+                    <div class="stat-item" style="--card-color: {% cycle '#00b4d8' '#e7298a' '#ffb703' '#1d3557' '#7209b7' '#06d6a0' '#ef476f' '#118ab2' %};">
+                        
+                        <!-- Renkli Kutu İçinde İkon -->
+                        <div class="icon-box shadow-sm">
+                            <i class="fas 
+                                {% if 'Baskı' in ders.adi %}fa-print
+                                {% elif 'Cilt' in ders.adi %}fa-book
+                                {% elif 'Tasarım' in ders.adi %}fa-desktop
+                                {% elif 'Ambalaj' in ders.adi or 'Kartonaj' in ders.adi %}fa-box
+                                {% elif 'Kalıp' in ders.adi %}fa-stamp
+                                {% elif 'Serigrafi' in ders.adi %}fa-fill-drip
+                                {% elif 'Grafik' in ders.adi %}fa-palette
+                                {% else %}fa-layer-group{% endif %} 
+                                stat-icon"></i>
+                        </div>
+                        
+                        <!-- Soru Sayısı Etiketi -->
+                        <span class="course-badge">{{ ders.soru_sayisi }} ADET SORU</span>
+                        
+                        <!-- Ders Adı -->
+                        <span class="stat-label">{{ ders.adi }}</span>
+                        
+                        <!-- Sınıf ve Dal Bilgisi -->
+                        <span class="stat-desc">
+                            {{ ders.sinif }}. Sınıf Alan Ortak Ders<br>
+                            {{ ders.dal_adi }}
+                        </span>
+                        
+                        <!-- Görseldeki İncele Butonu -->
+                        <a href="{% url 'soru_bankasi' %}" class="action-link">
+                            <i class="fas fa-arrow-circle-right me-2"></i> İncele
+                        </a>
+                        
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p class="text-muted fw-bold">Henüz sisteme tanımlanmış bir ders bulunamadı.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Özellik Kartları Bölümü -->
+<div class="container py-4 mb-5">
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-4">
+            <div class="card feature-card text-center p-4 shadow-sm border">
+                <div class="card-body">
+                    <div class="icon-wrapper"><i class="fas fa-layer-group"></i></div>
+                    <h4 class="card-title fw-bold text-dark mb-3">Zengin Soru Bankası</h4>
+                    <p class="card-text text-muted mb-4">Alanınıza uygun binlerce soru arasından filtreleme yapın.</p>
+                    <a href="{% url 'soru_bankasi' %}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">Soru Bankasına Git</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card text-center p-4 shadow-sm border">
+                <div class="card-body">
+                    <div class="icon-wrapper"><i class="fas fa-file-signature"></i></div>
+                    <h4 class="card-title fw-bold text-dark mb-3">Sınav Sihirbazı</h4>
+                    <p class="card-text text-muted mb-4">Anında basıma hazır profesyonel sınav kağıtları oluşturun.</p>
+                    <a href="{% url 'sihirbaz' %}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">Sınav Hazırla</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card text-center p-4 shadow-sm border">
+                <div class="card-body">
+                    <div class="icon-wrapper"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h4 class="card-title fw-bold text-dark mb-3">Soru Havuzunu Büyüt</h4>
+                    <p class="card-text text-muted mb-4">Sisteme kendi hazırladığınız soruları ekleyin.</p>
+                    {% if request.user.is_authenticated %}
+                        <a href="{% url 'yeni_soru' %}" class="btn btn-outline-success rounded-pill px-4 fw-bold">Yeni Soru Ekle</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">Giriş Yap</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

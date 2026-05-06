@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yeni Soru Ekle | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+  {% if show_ads %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6022841183529597" crossorigin="anonymous"></script>
+  {% endif %}
+  <style>
+    /* Form Kartı ve Başlık Tasarımı */
+    .form-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+        overflow: hidden;
+        background-color: white;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, var(--primary-bg) 0%, #173a65 100%);
+        color: white;
+        padding: 1.25rem;
+        text-align: center;
+        border-bottom: 4px solid var(--accent-color);
+    }
+
+    /* Etiketler ve Seçenekler */
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-bg);
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .options-container {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+    }
+    
+    /* YENİ: Klasik Soru Cevap Kutusu Rengi */
+    .classic-answer-container {
+        background-color: #f0f7ff;
+        border: 1px solid #cce5ff;
+    }
+
+    textarea {
+        resize: vertical; 
+    }
+
+    /* Toplu Soru Ekleme Alanı Özelleştirmeleri */
+    .bulk-toggle-card {
+        background-color: #fff8e6;
+        border: 2px dashed #ffc107;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .bulk-toggle-card:hover {
+        background-color: #fff3cd;
+    }
+
+    .bulk-area {
+        background-color: #fff3cd;
+        border: 1px solid #ffe69c;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    #previewModal {
+        z-index: 1050;
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <!-- GENİŞLİK DARALTILDI: col-lg-10'dan col-lg-8'e çekildi -->
+        <div class="col-lg-8 col-md-10">
+            
+            {% if form.errors %}
+                <div class="alert alert-danger shadow-sm rounded-3 mb-3">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i><strong>{{ field.label }}:</strong> {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-card">
+                <div class="form-header">
+                    <h3 class="fw-bold mb-0"><i class="fas fa-plus-circle me-2"></i>Yeni Soru Ekle</h3>
+                </div>
+                
+                <div class="card-body p-3 p-md-4">
+                    <form id="soruForm" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- ADMİN TOPLU EKLEME BÖLÜMÜ -->
+                        {% if request.user.is_staff %}
+                            <div class="bulk-toggle-card p-2 px-3 mb-3 d-flex align-items-center justify-content-between shadow-sm">
+                                <div>
+                                    <h6 class="text-danger fw-bold mb-0"><i class="fas fa-bolt me-2"></i>Toplu Soru Ekleme Modu</h6>
+                                    <small class="text-muted" style="font-size: 0.8rem;">Soruları yapıştırarak hızlıca ekleyin.</small>
+                                </div>
+                                <div class="form-check form-switch fs-4 mb-0">
+                                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="bulk_mode_toggle" name="bulk_mode" value="1">
+                                </div>
+                            </div>
+
+                            <div id="bulk_fields" class="bulk-area mb-3 d-none shadow-sm">
+                                <div class="mb-2">
+                                    <label for="bulk_text" class="form-label text-dark fw-bold"><i class="fas fa-align-left me-2"></i>Toplu Soru Metni</label>
+                                    <textarea id="bulk_text" name="bulk_text" rows="5" class="form-control border-warning shadow-sm"></textarea>
+                                </div>
+                                <div class="mb-0 mt-3 border-top border-warning pt-2">
+                                    <label for="bulk_answer_key" class="form-label text-dark fw-bold"><i class="fas fa-key me-2"></i>Toplu Cevap Anahtarı</label>
+                                    <textarea id="bulk_answer_key" name="bulk_answer_key" rows="1" class="form-control border-warning shadow-sm"></textarea>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Hiyerarşi: Sınıf-Dal-Ders-Modül -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-3">
+                                <label for="sinif" class="form-label">Sınıf:</label>
+                                <select id="sinif" name="sinif" required class="form-select form-select-sm shadow-sm">
+                                    <option value="">Seçiniz</option>
+                                    {% for sinif in siniflar %}
+                                        <option value="{{ sinif.id }}">{{ sinif.sinif }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="dal" class="form-label">Dal:</label>
+                                <select id="dal" name="dal" required disabled class="form-select form-select-sm shadow-sm">
+                                    <option value="">Önce sınıf seçin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="ders" class="form-label">Ders:</label>
+                                <select id="ders" name="ders" required disabled class="form-select form-select-sm shadow-sm">
+                                    <option value="">Önce dal seçin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="modul" class="form-label">Modül:</label>
+                                <select id="modul" name="modul" required disabled class="form-select form-select-sm shadow-sm">
+                                    <option value="">Önce ders seçin</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Soru Türü ve Zorluk -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label for="tur" class="form-label">Soru Türü:</label>
+                                <select id="tur" name="tur" required class="form-select form-select-sm shadow-sm border-primary">
+                                    <option value="">Lütfen Tür Seçiniz...</option>
+                                    {% for tur in soru_turleri %}
+                                        <option value="{{ tur.id }}">{{ tur.adi }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="zorluk_seviyesi" class="form-label">Zorluk Seviyesi:</label>
+                                <select id="zorluk_seviyesi" name="zorluk_seviyesi" required class="form-select form-select-sm shadow-sm">
+                                    <option value="">Seçiniz</option>
+                                    <option value="kolay">Kolay</option>
+                                    <option value="orta" selected>Orta</option>
+                                    <option value="zor">Zor</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Manuel Soru Girişi Alanları (Tekli Soru) -->
+                        <div id="manual_fields" class="pt-2 border-top">
+                            <div class="mb-3">
+                                <label for="soru_metni" class="form-label">Soru Metni:</label>
+                                <textarea id="soru_metni" name="soru_metni" class="form-control shadow-sm" rows="3" placeholder="Sorunuzu buraya yazın..."></textarea>
+                            </div>
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label for="soru_resmi" class="form-label">Soru Resmi (Opsiyonel):</label>
+                                    <input type="file" id="soru_resmi" name="soru_resmi" accept="image/*" class="form-control form-control-sm shadow-sm">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="cevap_resmi" class="form-label">Cevap / Çözüm Resmi (Opsiyonel):</label>
+                                    <input type="file" id="cevap_resmi" name="cevap_resmi" accept="image/*" class="form-control form-control-sm shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <!-- 1. ŞIKLAR ALANI (Çoktan Seçmeli ise görünür) -->
+                            <div class="options-container shadow-sm mb-3" id="options_section" style="display: none;">
+                                <h6 class="fw-bold mb-2" style="color: var(--primary-bg);"><i class="fas fa-list-ol me-2"></i>Seçenekler (Çoktan Seçmeli)</h6>
+                                
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">A</span>
+                                            <textarea name="secenek_a" id="secenek_a" rows="1" class="form-control" placeholder="A şıkkını girin"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">B</span>
+                                            <textarea name="secenek_b" id="secenek_b" rows="1" class="form-control" placeholder="B şıkkını girin"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">C</span>
+                                            <textarea name="secenek_c" id="secenek_c" rows="1" class="form-control" placeholder="C şıkkını girin"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">D</span>
+                                            <textarea name="secenek_d" id="secenek_d" rows="1" class="form-control" placeholder="D şıkkını girin"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">E <small class="text-muted ms-1">(Ops.)</small></span>
+                                            <input type="text" name="secenek_e" id="secenek_e" class="form-control" placeholder="Lise grubu için boş bırakabilirsiniz">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 pt-2 border-top border-secondary-subtle d-flex align-items-center gap-3">
+                                    <label for="dogru_cevap" class="form-label mb-0 text-success fw-bold"><i class="fas fa-check-double me-1"></i>Doğru Cevap:</label>
+                                    <select id="dogru_cevap" name="dogru_cevap" class="form-select form-select-sm border-success fw-bold text-success shadow-sm" style="max-width: 150px;">
+                                        <option value="">Seçiniz...</option>
+                                        <option value="A">A Şıkkı</option>
+                                        <option value="B">B Şıkkı</option>
+                                        <option value="C">C Şıkkı</option>
+                                        <option value="D">D Şıkkı</option>
+                                        <option value="E">E Şıkkı</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 2. KLASİK / AÇIK UÇLU CEVAP ALANI (Çoktan seçmeli değilse görünür) -->
+                            <div class="options-container classic-answer-container shadow-sm mb-3" id="classic_answer_section" style="display: none;">
+                                <h6 class="fw-bold mb-2 text-primary"><i class="fas fa-pen-nib me-2"></i>Referans Cevap Metni</h6>
+                                <p class="text-muted small mb-2" style="line-height: 1.2;">Bu sorunun cevabını, açık uçlu cevabını veya boşluğa gelecek kelimeyi aşağıya yazınız. Bu alan sınav kağıdının <strong>Cevap Anahtarı</strong> bölümünde görünecektir.</p>
+                                <textarea name="klasik_cevap" id="klasik_cevap" rows="2" class="form-control shadow-sm border-primary" placeholder="Cevabı buraya yazın..."></textarea>
+                            </div>
+                            
+                        </div>
+                        
+                        <!-- Kaydet ve Ön İzleme Butonları -->
+                        <div class="d-flex gap-2 mt-3 pt-3 border-top">
+                            <button type="button" id="btnPreview" class="btn btn-info text-white fw-bold px-4 py-1 shadow-sm">
+                                <i class="fas fa-eye me-2"></i> Ön İzleme
+                            </button>
+                            <button type="submit" id="btnSubmit" class="btn btn-success fw-bold px-5 py-1 shadow-sm ms-auto">
+                                <i class="fas fa-save me-2"></i> Kaydet
+                            </button>
+                            
+                            {% if request.user.is_staff %}
+                            <button type="submit" name="analyze_bulk" value="1" id="btnBulk" class="btn btn-warning fw-bold px-5 py-1 shadow-sm d-none ms-auto">
+                                <i class="fas fa-magic me-2"></i> Toplu Analiz Et
+                            </button>
+                            {% endif %}
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ön İzleme Modalı -->
+<div id="previewModal" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center">
+    <div class="bg-white p-4 p-md-5 rounded-4 shadow-lg w-100 mx-3" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <h4 class="fw-bold mb-3 pb-2 border-bottom text-primary"><i class="fas fa-search me-2"></i>Soru Ön İzleme</h4>
+        <div id="previewContent" class="mb-4">
+            <!-- JS ile Doldurulacak -->
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <button type="button" id="btnEdit" class="btn btn-secondary btn-sm fw-bold px-4">Düzenlemeye Dön</button>
+            <button type="button" id="btnConfirm" class="btn btn-success btn-sm fw-bold px-4">Onayla ve Kaydet</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // 1. Toplu (Bulk) Mod Değiştiricisi
+        $('#bulk_mode_toggle').change(function(){
+            if($(this).is(':checked')){
+                $('#bulk_fields').removeClass('d-none');
+                $('#manual_fields').addClass('d-none');
+                $('#btnPreview, #btnSubmit').addClass('d-none');
+                $('#btnBulk').removeClass('d-none');
+            } else {
+                $('#bulk_fields').addClass('d-none');
+                $('#manual_fields').removeClass('d-none');
+                $('#btnPreview, #btnSubmit').removeClass('d-none');
+                $('#btnBulk').addClass('d-none');
+            }
+        });
+
+        // 2. Soru Türüne Göre Şık / Klasik Cevap Alanı Değiştirici
+        function toggleOptionsSection() {
+            var selectedText = $('#tur option:selected').text().trim().toLowerCase();
+            
+            if (selectedText === 'lütfen tür seçiniz...' || selectedText === 'seçiniz' || selectedText === '') {
+                $('#options_section').slideUp(200);
+                $('#classic_answer_section').slideUp(200);
+            } else if (selectedText.indexOf('seçmeli') !== -1 || selectedText.indexOf('test') !== -1) {
+                $('#options_section').slideDown(200);
+                $('#classic_answer_section').slideUp(200);
+            } else {
+                $('#options_section').slideUp(200);
+                $('#classic_answer_section').slideDown(200);
+            }
+        }
+        
+        toggleOptionsSection();
+        $('#tur').change(function() {
+            toggleOptionsSection();
+        });
+
+        // 3. Sınıf -> Dal -> Ders -> Modül Zinciri
+        $('#sinif').change(function() {
+            var sinif_id = $(this).val();
+            $('#dal').prop('disabled', true).empty().append('<option value="">Yükleniyor...</option>');
+            $('#ders').prop('disabled', true).empty().append('<option value="">Önce dal seçin</option>');
+            $('#modul').prop('disabled', true).empty().append('<option value="">Önce ders seçin</option>');
+            
+            if (sinif_id) {
+                $.getJSON(`/api/dallar/${sinif_id}/`, function(data) {
+                    $('#dal').prop('disabled', false).empty().append('<option value="">Seçiniz</option>');
+                    $.each(data.dallar, function(index, dal) {
+                        $('#dal').append(`<option value="${dal.id}">${dal.adi}</option>`);
+                    });
+                });
+            }
+        });
+        
+        $('#dal').change(function() {
+            var dal_id = $(this).val();
+            $('#ders').prop('disabled', true).empty().append('<option value="">Yükleniyor...</option>');
+            $('#modul').prop('disabled', true).empty().append('<option value="">Önce ders seçin</option>');
+            
+            if (dal_id) {
+                $.getJSON(`/api/dersler/${dal_id}/`, function(data) {
+                    $('#ders').prop('disabled', false).empty().append('<option value="">Seçiniz</option>');
+                    $.each(data.dersler, function(index, ders) {
+                        $('#ders').append(`<option value="${ders.id}">${ders.adi}</option>`);
+                    });
+                });
+            }
+        });
+        
+        $('#ders').change(function() {
+            var ders_id = $(this).val();
+            $('#modul').prop('disabled', true).empty().append('<option value="">Yükleniyor...</option>');
+            
+            if (ders_id) {
+                $.getJSON(`/api/moduller/${ders_id}/`, function(data) {
+                    $('#modul').prop('disabled', false).empty().append('<option value="">Seçiniz</option>');
+                    $.each(data.moduller, function(index, modul) {
+                        $('#modul').append(`<option value="${modul.id}">${modul.adi}</option>`);
+                    });
+                });
+            }
+        });
+
+        // 4. Ön İzleme (Preview) İşlemleri
+        $('#btnPreview').click(function(e) {
+            e.preventDefault();
+            
+            var soruMetni = $('#soru_metni').val();
+            var zorluk = $('#zorluk_seviyesi option:selected').text();
+            
+            var selectedTur = $('#tur option:selected').text().trim().toLowerCase();
+            if(selectedTur === 'lütfen tür seçiniz...' || selectedTur === 'seçiniz' || selectedTur === '') {
+                alert("Lütfen bir soru türü seçiniz.");
+                return;
+            }
+
+            var isCoktanSecmeli = selectedTur.indexOf('seçmeli') !== -1 || selectedTur.indexOf('test') !== -1;
+
+            if (!soruMetni) {
+                alert("Lütfen Soru metnini doldurduğunuzdan emin olun.");
+                return;
+            }
+
+            // GÜNCELLEME: A, B, C, D zorunluluğu kaldırıldı. Sadece Doğru Cevap zorunlu bırakıldı.
+            if (isCoktanSecmeli) {
+                var secA = $('#secenek_a').val();
+                var secB = $('#secenek_b').val();
+                var secC = $('#secenek_c').val();
+                var secD = $('#secenek_d').val();
+                var secE = $('#secenek_e').val();
+                var dogruCevap = $('#dogru_cevap').val();
+
+                if (!dogruCevap) {
+                    alert("Şıkları eksik bırakabilirsiniz ancak lütfen Doğru Cevabın hangisi olduğunu seçiniz.");
+                    return;
+                }
+            } else {
+                var klasikCevap = $('#klasik_cevap').val();
+                if(!klasikCevap) {
+                    alert("Lütfen Referans Cevap Metnini doldurunuz.");
+                    return;
+                }
+            }
+
+            // Ekran Çıktısı (Önizleme)
+            var previewHTML = `<div class="mb-3"><span class="badge bg-info text-dark px-3 py-1 rounded fs-6 border">Zorluk: ${zorluk}</span></div>`;
+            previewHTML += `<div class="mb-3"><p class="fs-6 text-dark" style="line-height: 1.5;">${soruMetni.replace(/\n/g, '<br>')}</p></div>`;
+            
+            var soruResmi = $('#soru_resmi').val();
+            var cevapResmi = $('#cevap_resmi').val();
+            if(soruResmi) { previewHTML += `<div class="alert alert-secondary py-1 px-3 mb-2 small"><i class="fas fa-image me-2"></i>Soru resmi eklendi.</div>`; }
+            if(cevapResmi) { previewHTML += `<div class="alert alert-success py-1 px-3 mb-2 small"><i class="fas fa-image me-2"></i>Cevap/Çözüm resmi eklendi.</div>`; }
+
+            // GÜNCELLEME: Sadece içi dolu olan şıklar ön izlemede gösterilecek.
+            if (isCoktanSecmeli) {
+                previewHTML += `<div class="d-flex flex-column gap-2 bg-light p-3 rounded-3 border mt-3">`;
+                
+                if (secA.trim() !== '') previewHTML += `<div class="p-2 px-3 rounded border ${dogruCevap === 'A' ? 'bg-success text-white fw-bold' : 'bg-white text-dark'}"><strong>A)</strong> ${secA}</div>`;
+                if (secB.trim() !== '') previewHTML += `<div class="p-2 px-3 rounded border ${dogruCevap === 'B' ? 'bg-success text-white fw-bold' : 'bg-white text-dark'}"><strong>B)</strong> ${secB}</div>`;
+                if (secC.trim() !== '') previewHTML += `<div class="p-2 px-3 rounded border ${dogruCevap === 'C' ? 'bg-success text-white fw-bold' : 'bg-white text-dark'}"><strong>C)</strong> ${secC}</div>`;
+                if (secD.trim() !== '') previewHTML += `<div class="p-2 px-3 rounded border ${dogruCevap === 'D' ? 'bg-success text-white fw-bold' : 'bg-white text-dark'}"><strong>D)</strong> ${secD}</div>`;
+                if (secE.trim() !== '') previewHTML += `<div class="p-2 px-3 rounded border ${dogruCevap === 'E' ? 'bg-success text-white fw-bold' : 'bg-white text-dark'}"><strong>E)</strong> ${secE}</div>`;
+                
+                previewHTML += `</div>`;
+            } else {
+                previewHTML += `<div class="alert alert-warning mt-3 py-2 px-3 small"><i class="fas fa-pen-nib me-2"></i>Bu soru açık uçlu/klasik formatta eklenecektir.</div>`;
+                previewHTML += `<div class="bg-light p-3 rounded-3 border mt-2">
+                                    <h6 class="text-primary fw-bold mb-2">Referans Cevap:</h6>
+                                    <p class="mb-0 text-dark" style="white-space: pre-wrap;">${klasikCevap}</p>
+                                </div>`;
+            }
+            
+            $('#previewContent').html(previewHTML);
+            $('#previewModal').removeClass('d-none').addClass('d-flex');
+        });
+
+        $('#btnEdit').click(function() {
+            $('#previewModal').removeClass('d-flex').addClass('d-none');
+        });
+
+        $('#btnConfirm').click(function() {
+            $('#previewModal').removeClass('d-flex').addClass('d-none');
+            $('#soruForm').submit();
+        });
+    });
+</script>
+{% endblock %}

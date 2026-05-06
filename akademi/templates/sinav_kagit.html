@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sınav Kağıdı | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+<style>
+    .exam-paper {
+        background-color: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    .question-box {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .options-list {
+        list-style-type: none;
+        padding-left: 0;
+        margin-top: 15px;
+    }
+    .options-list li {
+        margin-bottom: 8px;
+        font-size: 1.05rem;
+    }
+    
+    /* Cevap Anahtarı Kutu Tasarımı */
+    .answer-key-grid {
+        display: grid;
+        /* Resimlerin sığması için genişlik 150px yapıldı */
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .answer-box {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+
+    /* Yazdırma Modu Ayarları */
+    @media print {
+        body * { visibility: hidden; }
+        .exam-paper, .exam-paper * { visibility: visible; }
+        .exam-paper { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; }
+        .no-print { display: none !important; }
+        
+        .page-break { page-break-before: always; margin-top: 0 !important; padding-top: 0 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    
+    <!-- Üst Kontrol Butonları -->
+    <div class="row mb-4 no-print">
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            
+            <!-- SOL TARAF: Geri Dön ve Temizle Butonları -->
+            <div class="d-flex gap-2">
+                <button onclick="history.back()" class="btn btn-secondary shadow-sm fw-bold">
+                    <i class="fas fa-arrow-left me-2"></i> Geri Dön
+                </button>
+                
+                <a href="{% url 'clear_exam_session' %}" class="btn btn-danger shadow-sm fw-bold" onclick="return confirm('Sepetteki seçili sorular tamamen silinecek. Emin misiniz?');">
+                    <i class="fas fa-trash-alt me-2"></i> Seçimleri Temizle
+                </a>
+            </div>
+            
+            <!-- SAĞ TARAF: Dışa Aktar ve Yazdır Butonları -->
+            <div class="d-flex gap-2">
+                <!-- Word'e Aktar Formu -->
+                <form method="POST" action="{% url 'export_word' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    {% for soru in sorular %}
+                        <input type="hidden" name="soru_ids" value="{{ soru.id }}">
+                    {% endfor %}
+                    <button type="submit" class="btn text-white shadow-sm fw-bold" style="background-color: #2b579a; border: none;">
+                        <i class="fas fa-file-word me-2"></i> Word'e Aktar
+                    </button>
+                </form>
+
+                <button onclick="window.print()" class="btn shadow-sm fw-bold text-white" style="background-color: var(--accent-color, #ff4d00); border: none;">
+                    <i class="fas fa-print me-2"></i> Sınavı PDF/Yazdır
+                </button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Sınav Kağıdı Alanı -->
+    <div class="exam-paper">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold" style="color: var(--primary-bg, #0a1f3a);">MATBAA AKADEMİ SINAV KAĞIDI</h2>
+            <p class="text-muted fs-5">Toplam Soru Sayısı: {{ sorular|length }}</p>
+        </div>
+
+        {% if sorular %}
+            
+            <!-- SORULAR BÖLÜMÜ -->
+            {% for soru in sorular %}
+            <div class="question-box">
+                <p class="fw-bold mb-3 fs-5" style="color: #333;">{{ forloop.counter }}. {{ soru.soru_metni }}</p>
+
+                {% if soru.soru_resmi %}
+                    <div class="mb-3">
+                        <img src="{{ soru.soru_resmi.url }}" alt="Soru Görseli" style="max-height: 250px; border-radius: 8px;">
+                    </div>
+                {% endif %}
+
+                <!-- EĞER HERHANGİ BİR ŞIK DOLUYSA LİSTEYİ GÖSTER -->
+                {% if soru.secenek_a or soru.secenek_b or soru.secenek_c or soru.secenek_d %}
+                    <ul class="options-list">
+                        {% if soru.secenek_a %}<li><strong>A)</strong> {{ soru.secenek_a }}</li>{% endif %}
+                        {% if soru.secenek_b %}<li><strong>B)</strong> {{ soru.secenek_b }}</li>{% endif %}
+                        {% if soru.secenek_c %}<li><strong>C)</strong> {{ soru.secenek_c }}</li>{% endif %}
+                        {% if soru.secenek_d %}<li><strong>D)</strong> {{ soru.secenek_d }}</li>{% endif %}
+                        {% if soru.secenek_e %}<li><strong>E)</strong> {{ soru.secenek_e }}</li>{% endif %}
+                    </ul>
+                {% else %}
+                    <!-- EĞER HİÇBİR ŞIK YOKSA (KLASİK SORU) YAZI YAZMAK İÇİN BOŞLUK BIRAK -->
+                    <div style="min-height: 120px; border-bottom: 1px dotted #ccc; margin-top: 15px;"></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <!-- CEVAP ANAHTARI BÖLÜMÜ -->
+            <div class="page-break mt-5 pt-4">
+                <h3 class="fw-bold" style="color: var(--primary-bg, #0a1f3a); border-bottom: 3px solid var(--accent-color, #ff4d00); padding-bottom: 10px;">
+                    Cevap Anahtarı
+                </h3>
+                <div class="answer-key-grid">
+                    {% for soru in sorular %}
+                        <div class="answer-box">
+                            <span class="text-muted fs-6" style="display: block; margin-bottom: 5px;">{{ forloop.counter }}. Soru</span>
+                            <!-- Doğru cevap boşsa Klasik yaz -->
+                            <strong>{% if soru.dogru_cevap %}{{ soru.dogru_cevap }}{% else %}Klasik{% endif %}</strong>
+                            
+                            <!-- EĞER CEVAP RESMİ VARSA BURADA GÖSTER -->
+                            {% if soru.cevap_resmi %}
+                            <div class="mt-2 pt-2 border-top">
+                                <img src="{{ soru.cevap_resmi.url }}" alt="Cevap Görseli" style="max-width: 100%; max-height: 100px; border-radius: 4px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        {% else %}
+            <div class="alert alert-warning text-center fw-bold fs-5">
+                Seçtiğiniz kriterlere uygun soru bulunamadı veya sepetiniz boş.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

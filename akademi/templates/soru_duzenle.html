@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Soru Düzenle | Matbaa Akademi{% endblock %}
+
+{% block extra_css %}
+  <style>
+    .form-card { border: none; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); overflow: hidden; background-color: white; }
+    .form-header { background: linear-gradient(135deg, #198754 0%, #146c43 100%); color: white; padding: 1.25rem; text-align: center; border-bottom: 4px solid #ffc107; }
+    .form-label { font-weight: 600; color: var(--primary-bg); margin-bottom: 0.25rem; font-size: 0.9rem; }
+    .options-container { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem 1.25rem; }
+    .classic-answer-container { background-color: #f0f7ff; border: 1px solid #cce5ff; }
+    textarea { resize: vertical; }
+    #previewModal { z-index: 1050; background-color: rgba(0, 0, 0, 0.6); }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="form-card">
+                <div class="form-header">
+                    <h3 class="fw-bold mb-0"><i class="fas fa-edit me-2"></i>Soruyu Düzenle</h3>
+                    <p class="mb-0 mt-1" style="font-size:0.85rem;">#{{ soru.id }} numaralı soruyu güncelliyorsunuz.</p>
+                </div>
+                
+                <div class="card-body p-3 p-md-4">
+                    <form id="soruForm" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Hiyerarşi: Sınıf-Dal-Ders-Modül -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Sınıf:</label>
+                                <select id="sinif" name="sinif" required class="form-select form-select-sm shadow-sm">
+                                    {% for sinif in siniflar %}
+                                        <option value="{{ sinif.id }}" {% if soru.sinif.id == sinif.id %}selected{% endif %}>{{ sinif.sinif }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Dal:</label>
+                                <select id="dal" name="dal" required class="form-select form-select-sm shadow-sm">
+                                    <option value="{{ soru.dal.id }}" selected>{{ soru.dal.adi }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Ders:</label>
+                                <select id="ders" name="ders" required class="form-select form-select-sm shadow-sm">
+                                    <option value="{{ soru.ders.id }}" selected>{{ soru.ders.adi }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Modül:</label>
+                                <select id="modul" name="modul" required class="form-select form-select-sm shadow-sm">
+                                    <option value="{{ soru.modul.id }}" selected>{{ soru.modul.adi }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Soru Türü ve Zorluk -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Soru Türü:</label>
+                                <select id="tur" name="tur" required class="form-select form-select-sm shadow-sm border-primary">
+                                    {% for tur in soru_turleri %}
+                                        <option value="{{ tur.id }}" {% if soru.tur.id == tur.id %}selected{% endif %}>{{ tur.adi }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Zorluk Seviyesi:</label>
+                                <select id="zorluk_seviyesi" name="zorluk_seviyesi" required class="form-select form-select-sm shadow-sm">
+                                    <option value="kolay" {% if soru.zorluk_seviyesi == 'kolay' %}selected{% endif %}>Kolay</option>
+                                    <option value="orta" {% if soru.zorluk_seviyesi == 'orta' %}selected{% endif %}>Orta</option>
+                                    <option value="zor" {% if soru.zorluk_seviyesi == 'zor' %}selected{% endif %}>Zor</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Metin ve Resim Alanları -->
+                        <div class="pt-2 border-top">
+                            <div class="mb-3">
+                                <label class="form-label">Soru Metni:</label>
+                                <textarea id="soru_metni" name="soru_metni" class="form-control shadow-sm" rows="3">{{ soru.soru_metni }}</textarea>
+                            </div>
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Soru Resmi Değiştir (İsteğe Bağlı):</label>
+                                    <input type="file" name="soru_resmi" accept="image/*" class="form-control form-control-sm shadow-sm">
+                                    {% if soru.soru_resmi %}<small class="text-success"><i class="fas fa-check"></i> Mevcut resim var.</small>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Cevap Resmi Değiştir (İsteğe Bağlı):</label>
+                                    <input type="file" name="cevap_resmi" accept="image/*" class="form-control form-control-sm shadow-sm">
+                                    {% if soru.cevap_resmi %}<small class="text-success"><i class="fas fa-check"></i> Mevcut cevap resmi var.</small>{% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Çoktan Seçmeli Şıklar -->
+                            <div class="options-container shadow-sm mb-3" id="options_section" style="display: none;">
+                                <h6 class="fw-bold mb-2" style="color: var(--primary-bg);"><i class="fas fa-list-ol me-2"></i>Seçenekler (Çoktan Seçmeli)</h6>
+                                
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">A</span>
+                                            <textarea name="secenek_a" id="secenek_a" rows="1" class="form-control">{{ soru.secenek_a|default_if_none:"" }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">B</span>
+                                            <textarea name="secenek_b" id="secenek_b" rows="1" class="form-control">{{ soru.secenek_b|default_if_none:"" }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">C</span>
+                                            <textarea name="secenek_c" id="secenek_c" rows="1" class="form-control">{{ soru.secenek_c|default_if_none:"" }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">D</span>
+                                            <textarea name="secenek_d" id="secenek_d" rows="1" class="form-control">{{ soru.secenek_d|default_if_none:"" }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">E <small class="text-muted ms-1">(Ops.)</small></span>
+                                            <input type="text" name="secenek_e" id="secenek_e" class="form-control" value="{{ soru.secenek_e|default_if_none:'' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 pt-2 border-top border-secondary-subtle d-flex align-items-center gap-3">
+                                    <label class="form-label mb-0 text-success fw-bold"><i class="fas fa-check-double me-1"></i>Doğru Cevap:</label>
+                                    <select id="dogru_cevap" name="dogru_cevap" class="form-select form-select-sm border-success fw-bold text-success shadow-sm" style="max-width: 150px;">
+                                        <option value="">Seçiniz...</option>
+                                        <option value="A" {% if soru.dogru_cevap == 'A' %}selected{% endif %}>A Şıkkı</option>
+                                        <option value="B" {% if soru.dogru_cevap == 'B' %}selected{% endif %}>B Şıkkı</option>
+                                        <option value="C" {% if soru.dogru_cevap == 'C' %}selected{% endif %}>C Şıkkı</option>
+                                        <option value="D" {% if soru.dogru_cevap == 'D' %}selected{% endif %}>D Şıkkı</option>
+                                        <option value="E" {% if soru.dogru_cevap == 'E' %}selected{% endif %}>E Şıkkı</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Klasik Soru Cevabı -->
+                            <div class="options-container classic-answer-container shadow-sm mb-3" id="classic_answer_section" style="display: none;">
+                                <h6 class="fw-bold mb-2 text-primary"><i class="fas fa-pen-nib me-2"></i>Referans Cevap Metni</h6>
+                                <textarea name="klasik_cevap" id="klasik_cevap" rows="2" class="form-control shadow-sm border-primary">{{ soru.klasik_cevap|default_if_none:"" }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-3 pt-3 border-top">
+                            <a href="{% url 'soru_bankasi' %}" class="btn btn-secondary fw-bold px-4 py-1 shadow-sm"><i class="fas fa-arrow-left me-2"></i>İptal</a>
+                            <button type="submit" class="btn btn-success fw-bold px-5 py-1 shadow-sm ms-auto"><i class="fas fa-save me-2"></i> Güncellemeyi Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Tür değişimine göre Şıkları/Klasik Cevabı Göster
+        function toggleOptionsSection() {
+            var selectedText = $('#tur option:selected').text().trim().toLowerCase();
+            if (selectedText.indexOf('seçmeli') !== -1 || selectedText.indexOf('test') !== -1) {
+                $('#options_section').show();
+                $('#classic_answer_section').hide();
+            } else {
+                $('#options_section').hide();
+                $('#classic_answer_section').show();
+            }
+        }
+        
+        toggleOptionsSection(); // Sayfa yüklenince çalıştır
+        $('#tur').change(toggleOptionsSection); // Değiştikçe çalıştır
+
+        // Sınıf değiştirilince yeni DALLARI getir
+        $('#sinif').change(function() {
+            var sinif_id = $(this).val();
+            $('#dal').prop('disabled', true).empty().append('<option value="">Yükleniyor...</option>');
+            $('#ders').prop('disabled', true).empty().append('<option value="">Önce dal seçin</option>');
+            $('#modul').prop('disabled', true).empty().append('<option value="">Önce ders seçin</option>');
+            
+            if (sinif_id) {
+                $.getJSON(`/api/dallar/${sinif_id}/`, function(data) {
+                    $('#dal').prop('disabled', false).empty().append('<option value="">Seçiniz</option>');
+                    $.each(data.dallar, function(index, dal) { $('#dal').append(`<option value="${dal.id}">${dal.adi}</option>`); });
+                });
+            }
+        });
+        
+        // Dal değiştirilince yeni DERSLERİ getir
+        $('#dal').change(function() {
+            var dal_id = $(this).val();
+            $('#ders').prop('disabled', true).empty().append('<option value="">Yükleniyor...</option>');
+            $('#modul').prop('disabled', true).empty().append('<option value="">Önce ders seçin</option>');
+            
+            if (dal_id) {
+                $.getJSON(`/api/dersler/${dal_id}/`, function(data) {
+                    $('#ders').prop('disabled', false).empty().append('<option value="">Seçiniz</option>');
+                    $.each(data.dersler, function(index, ders) { $('#ders').append(`<option value="${ders.id}">${ders.adi}</option>`); });
+                });
+            }
+        });
+        
+        // Ders değiştirilince yeni MODÜLLERİ getir
+        $('#ders').change(function() {
+            var ders_id = $(this).val();
+            $('#modul').prop('disabled', true).empty().append('<option value="">Yükleniyor...</option>');
+            
+            if (ders_id) {
+                $.getJSON(`/api/moduller/${ders_id}/`, function(data) {
+                    $('#modul').prop('disabled', false).empty().append('<option value="">Seçiniz</option>');
+                    $.each(data.moduller, function(index, modul) { $('#modul').append(`<option value="${modul.id}">${modul.adi}</option>`); });
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

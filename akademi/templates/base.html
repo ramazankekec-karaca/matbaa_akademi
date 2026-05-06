@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Matbaa Akademi{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome (İkonlar için) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-bg: #0a192f;
+            --accent-color: #ff4d00;
+        }
+        body {
+            background-color: #f4f7f6;
+            min-height: 100vh;
+        }
+        .navbar-custom {
+            background-color: var(--primary-bg);
+            padding: 1rem 2%;
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        .btn-accent {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        footer {
+            background-color: var(--primary-bg);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Navigasyon Menüsü -->
+    <nav class="navbar navbar-expand-lg navbar-custom shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <i class="fas fa-print me-2"></i> Matbaa Akademi
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'soru_bankasi' %}">Soru Bankası</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'sihirbaz' %}">Sınav Sihirbazı</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">Hakkında</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    {% if request.user.is_authenticated %}
+                        
+                        <!-- YENİ SORU EKLE BUTONU BURAYA EKLENDİ -->
+                        <a href="{% url 'yeni_soru' %}" class="btn btn-success btn-sm me-2 fw-bold shadow-sm">
+                            <i class="fas fa-plus-circle me-1"></i> Yeni Soru Ekle
+                        </a>
+
+                        <span class="text-white me-2">Merhaba, {{ request.user.username }}</span>
+                        
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Çıkış</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">Giriş</a>
+                        <a href="{% url 'register' %}" class="btn btn-accent btn-sm">Üye Ol</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dinamik İçerik Alanı -->
+    <main>
+        {% block content %}
+        <!-- Diğer HTML sayfaları buraya yerleşecek -->
+        {% endblock %}
+    </main>
+
+    <!-- Alt Bilgi (Footer) -->
+    <footer class="text-center">
+        <div class="container">
+            <p>&copy; 2026 Matbaa Akademi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
