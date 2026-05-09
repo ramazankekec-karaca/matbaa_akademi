@@ -137,7 +137,7 @@
         {% if sorular %}
             {% for soru in sorular %}
             <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch question-item"
-                 data-sinif="{{ soru.sinif.sinif }}" data-dal="{{ soru.dal.adi }}" 
+                 sınıf data-sinif= "{{ soru.sinif.sinif }}" data-dal="{{ soru.dal.adi }}" 
                  data-ders="{{ soru.ders.adi }}" data-modul="{{ soru.modul.adi }}" 
                  data-tur="{{ soru.tur.adi }}">
                 

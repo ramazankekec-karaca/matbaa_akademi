@@ -36,9 +36,9 @@
         height: 100%;
         display: flex;
         flex-direction: column;
-        align-items: flex-start; /* Sola dayalı */
+        align-items: anchor-center; /* Sola dayalı */
         text-align: left; /* Sola dayalı */
-        border-top: 5px solid var(--card-color, #173a65); /* Görseldeki gibi renkli üst çizgi */
+        border-top: 8px solid var(--card-color, #173a65); /* Görseldeki gibi renkli üst çizgi */
     }
 
     .stat-item:hover {
@@ -48,8 +48,8 @@
 
     /* GÜNCELLEME: İkon Kutusu Tasarımı (Renkli Kutu İçinde Beyaz İkon) */
     .icon-box {
-        width: 55px;
-        height: 55px;
+        width: 60px;
+        height: 70px;
         border-radius: 12px;
         background-color: var(--card-color, #173a65);
         display: flex;
@@ -59,18 +59,18 @@
     }
 
     .stat-icon {
-        font-size: 1.8rem;
+        font-size: 2rem;
         color: white; /* İkonlar artık beyaz */
     }
     
     /* Görseldeki MEB_MAT_001 benzeri gri etiket */
     .course-badge {
-        font-size: 0.65rem;
+        font-size: 1rem;
         font-weight: 800;
         color: #94a3b8;
         letter-spacing: 1px;
         margin-bottom: 6px;
-        text-transform: uppercase;
+        text-transform: capitalize;
         background-color: #f1f5f9;
         padding: 3px 8px;
         border-radius: 4px;
@@ -154,62 +154,6 @@
     </div>
 </div>
 
-<!-- İSTATİSTİKLER: Görseldeki Tasarıma Uygun Kartlar -->
-<div class="stats-bar shadow-sm">
-    <div class="container">
-        <!-- row-cols sınıflarıyla mobilde 1, tablette 2, pc'de 4 kart yan yana -->
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 justify-content-center">
-            {% if ders_istatistikleri %}
-                {% for ders in ders_istatistikleri %}
-                <div class="col">
-                    <!-- 
-                      GÜNCELLEME: Django 'cycle' kullanarak her karta sırayla farklı bir renk (Mavi, Pembe, Sarı, Lacivert vb.) atıyoruz. 
-                      Bu renk hem üst çizgiyi hem ikon kutusunu hem de 'İncele' yazısını boyar.
-                    -->
-                    <div class="stat-item" style="--card-color: {% cycle '#00b4d8' '#e7298a' '#ffb703' '#1d3557' '#7209b7' '#06d6a0' '#ef476f' '#118ab2' %};">
-                        
-                        <!-- Renkli Kutu İçinde İkon -->
-                        <div class="icon-box shadow-sm">
-                            <i class="fas 
-                                {% if 'Baskı' in ders.adi %}fa-print
-                                {% elif 'Cilt' in ders.adi %}fa-book
-                                {% elif 'Tasarım' in ders.adi %}fa-desktop
-                                {% elif 'Ambalaj' in ders.adi or 'Kartonaj' in ders.adi %}fa-box
-                                {% elif 'Kalıp' in ders.adi %}fa-stamp
-                                {% elif 'Serigrafi' in ders.adi %}fa-fill-drip
-                                {% elif 'Grafik' in ders.adi %}fa-palette
-                                {% else %}fa-layer-group{% endif %} 
-                                stat-icon"></i>
-                        </div>
-                        
-                        <!-- Soru Sayısı Etiketi -->
-                        <span class="course-badge">{{ ders.soru_sayisi }} ADET SORU</span>
-                        
-                        <!-- Ders Adı -->
-                        <span class="stat-label">{{ ders.adi }}</span>
-                        
-                        <!-- Sınıf ve Dal Bilgisi -->
-                        <span class="stat-desc">
-                            {{ ders.sinif }}. Sınıf Alan Ortak Ders<br>
-                            {{ ders.dal_adi }}
-                        </span>
-                        
-                        <!-- Görseldeki İncele Butonu -->
-                        <a href="{% url 'soru_bankasi' %}" class="action-link">
-                            <i class="fas fa-arrow-circle-right me-2"></i> İncele
-                        </a>
-                        
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12 text-center">
-                    <p class="text-muted fw-bold">Henüz sisteme tanımlanmış bir ders bulunamadı.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
 
 <!-- Özellik Kartları Bölümü -->
 <div class="container py-4 mb-5">
@@ -247,6 +191,63 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- İSTATİSTİKLER: Görseldeki Tasarıma Uygun Kartlar -->
+<div class="stats-bar shadow-sm">
+    <div class="container">
+        <!-- row-cols sınıflarıyla mobilde 1, tablette 2, pc'de 4 kart yan yana -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 justify-content-center">
+            {% if ders_istatistikleri %}
+                {% for ders in ders_istatistikleri %}
+                <div class="col">
+                    <!-- 
+                      GÜNCELLEME: Django 'cycle' kullanarak her karta sırayla farklı bir renk (Mavi, Pembe, Sarı, Lacivert vb.) atıyoruz. 
+                      Bu renk hem üst çizgiyi hem ikon kutusunu hem de 'İncele' yazısını boyar.
+                    -->
+                    <div class="stat-item" style="--card-color: {% cycle '#00b4d8' '#e7298a' '#ffb703' '#1d3557' '#7209b7' '#06d6a0' '#ef476f' '#118ab2' %};">
+                        
+                        <!-- Renkli Kutu İçinde İkon -->
+                        <div class="icon-box shadow-sm">
+                            <i class="fas 
+                                {% if 'Baskı' in ders.adi %}fa-print
+                                {% elif 'Cilt' in ders.adi %}fa-book
+                                {% elif 'Tasarım' in ders.adi %}fa-desktop
+                                {% elif 'Ambalaj' in ders.adi or 'Kartonaj' in ders.adi %}fa-box
+                                {% elif 'Kalıp' in ders.adi %}fa-stamp
+                                {% elif 'Serigrafi' in ders.adi %}fa-fill-drip
+                                {% elif 'Grafik' in ders.adi %}fa-palette
+                                {% else %}fa-layer-group{% endif %} 
+                                stat-icon"></i>
+                        </div>
+                        
+                        <!-- Soru Sayısı Etiketi -->
+                        <span class="course-badge">{{ ders.soru_sayisi }} Adet Soru</span>
+                        
+                        <!-- Ders Adı -->
+                        <span class="stat-label">{{ ders.adi }}</span>
+                        
+                        <!-- Sınıf ve Dal Bilgisi -->
+                        <span class="stat-desc">
+                            {{ ders.sinif }}. Sınıf<br>
+                            {{ ders.dal_adi }}
+                        </span>
+                        
+                        <!-- Görseldeki İncele Butonu -->
+                        <a href="{% url 'soru_bankasi' %}" class="action-link">
+                            <i class="fas fa-arrow-circle-right me-2"></i> İncele->
+                        </a>
+                        
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p class="text-muted fw-bold">Henüz sisteme tanımlanmış bir ders bulunamadı.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

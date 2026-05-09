@@ -1,5 +1,7 @@
 import io
 import os
+import re
+import json
 from docx import Document
 from docx.shared import Inches
 from django.conf import settings
@@ -10,7 +12,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.core.files.storage import FileSystemStorage
 from .models import Soru, Sinif, Dal, Ders, Modul, CustomUser, SoruTuru, HataBildirimi
 from .forms import CustomUserCreationForm, SoruForm, ContactForm
-import json
+from django.contrib import messages
 
 # 1. Ana Sayfa ve Temel Linkler
 def home(request):
@@ -136,43 +138,90 @@ def sinav_sihirbazi(request):
 # 3. Soru Ekleme ve Düzenleme İşlemleri
 @login_required(login_url='login')
 def yeni_soru(request):
-    """Tek model yapısına (A,B,C,D,E şıkları ve Klasik/Resimli) uygun yeni soru ekleme formunu işler."""
+    """Tekli veya Metin Kutusundan Toplu Kopyala-Yapıştır ile soru ekler."""
     if request.method == 'POST':
+        # 1. Ortak Verileri Al (Hem tekli hem toplu ekleme için geçerli)
         sinif_id = request.POST.get('sinif')
         dal_id = request.POST.get('dal')
         ders_id = request.POST.get('ders')
         modul_id = request.POST.get('modul')
         tur_id = request.POST.get('tur')
-        zorluk_seviyesi = request.POST.get('zorluk_seviyesi')
-        
-        soru_metni = request.POST.get('soru_metni')
-        soru_resmi = request.FILES.get('soru_resmi') 
-        cevap_resmi = request.FILES.get('cevap_resmi')
-        klasik_cevap = request.POST.get('klasik_cevap')
-        
-        secenek_a = request.POST.get('secenek_a')
-        secenek_b = request.POST.get('secenek_b')
-        secenek_c = request.POST.get('secenek_c')
-        secenek_d = request.POST.get('secenek_d')
-        secenek_e = request.POST.get('secenek_e', '') 
-        dogru_cevap = request.POST.get('dogru_cevap')
+        zorluk_seviyesi = request.POST.get('zorluk_seviyesi', 'orta')
 
         sinif = get_object_or_404(Sinif, id=sinif_id)
-        dal = get_object_or_404(Dal, id=dal_id)
+        dal = Dal.objects.filter(id=dal_id).first() if dal_id else None  # Alan ortak ise boş olabilir
         ders = get_object_or_404(Ders, id=ders_id)
         modul = get_object_or_404(Modul, id=modul_id)
         tur = get_object_or_404(SoruTuru, id=tur_id)
 
-        Soru.objects.create(
-            sinif=sinif, dal=dal, ders=ders, modul=modul, tur=tur,
-            soru_metni=soru_metni, soru_resmi=soru_resmi,
-            cevap_resmi=cevap_resmi, klasik_cevap=klasik_cevap,
-            secenek_a=secenek_a, secenek_b=secenek_b, secenek_c=secenek_c,
-            secenek_d=secenek_d, secenek_e=secenek_e,
-            dogru_cevap=dogru_cevap, zorluk_seviyesi=zorluk_seviyesi,
-            soruyu_hazirlayan=request.user
-        )
-        return redirect('soru_bankasi')
+        # 2. HANGİ MOD ÇALIŞIYOR KONTROL ET (Toplu mu Tekli mi?)
+        is_bulk_mode = request.POST.get('bulk_mode') == '1' or request.POST.get('analyze_bulk') == '1'
+
+        if is_bulk_mode:
+            # === TOPLU EKLEME MANTIĞI ===
+            bulk_text = request.POST.get('bulk_text', '')
+            bulk_answer_key = request.POST.get('bulk_answer_key', '')
+
+            if not bulk_text:
+                messages.error(request, "Toplu soru metni alanı boş bırakılamaz.")
+                return redirect('yeni_soru')
+
+            # Soruları sayı numaralarına göre parçala (Örn: "1.", "2)", "1-")
+            soru_bloklari = re.split(r'\n\d+[\.\)\-]\s*', '\n' + bulk_text)
+            soru_bloklari = [b.strip() for b in soru_bloklari if b.strip()]
+
+            # Cevap anahtarından sadece harfleri (A,B,C,D,E) ayıkla (Örn: "1-B, 2-A" -> ['B', 'A'])
+            cevaplar = re.findall(r'[A-Ea-e]', bulk_answer_key.upper())
+
+            eklenen_sayi = 0
+            for i, blok in enumerate(soru_bloklari):
+                # Her bir sorunun içindeki şıkları parçala (Örn: "A)", "B.", "C-")
+                parts = re.split(r'\n[A-Ea-e][\.\)\-]\s*', '\n' + blok)
+                
+                soru_metni = parts[0].strip()
+                secenekler = [p.strip() for p in parts[1:]] if len(parts) > 1 else []
+
+                # Doğru cevabı sırasıyla eşleştir (Eğer cevap anahtarı girildiyse)
+                dogru_cevap = cevaplar[i] if i < len(cevaplar) else None
+
+                Soru.objects.create(
+                    sinif=sinif, dal=dal, ders=ders, modul=modul, tur=tur,
+                    soru_metni=soru_metni,
+                    secenek_a=secenekler[0] if len(secenekler) > 0 else None,
+                    secenek_b=secenekler[1] if len(secenekler) > 1 else None,
+                    secenek_c=secenekler[2] if len(secenekler) > 2 else None,
+                    secenek_d=secenekler[3] if len(secenekler) > 3 else None,
+                    secenek_e=secenekler[4] if len(secenekler) > 4 else None,
+                    dogru_cevap=dogru_cevap,
+                    zorluk_seviyesi=zorluk_seviyesi,
+                    soruyu_hazirlayan=request.user,
+                    onay_durumu='onaylandi'
+                )
+                eklenen_sayi += 1
+
+            messages.success(request, f"Harika! {eklenen_sayi} adet soru başarıyla analiz edilip sisteme eklendi.")
+            return redirect('soru_bankasi')
+
+        else:
+            # === TEKLİ (MANUEL) EKLEME MANTIĞI ===
+            Soru.objects.create(
+                sinif=sinif, dal=dal, ders=ders, modul=modul, tur=tur,
+                soru_metni=request.POST.get('soru_metni'),
+                soru_resmi=request.FILES.get('soru_resmi'),
+                cevap_resmi=request.FILES.get('cevap_resmi'),
+                klasik_cevap=request.POST.get('klasik_cevap'),
+                secenek_a=request.POST.get('secenek_a'),
+                secenek_b=request.POST.get('secenek_b'),
+                secenek_c=request.POST.get('secenek_c'),
+                secenek_d=request.POST.get('secenek_d'),
+                secenek_e=request.POST.get('secenek_e', ''),
+                dogru_cevap=request.POST.get('dogru_cevap'),
+                zorluk_seviyesi=zorluk_seviyesi,
+                soruyu_hazirlayan=request.user,
+                onay_durumu='onaylandi'
+            )
+            messages.success(request, "Soru başarıyla eklendi.")
+            return redirect('soru_bankasi')
 
     context = {
         'siniflar': Sinif.objects.all(),
